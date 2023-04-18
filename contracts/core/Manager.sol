@@ -273,7 +273,6 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address[] calldata _collectionWhitelist
   ) external onlyRole(OPERATOR_ROLE) returns (bytes32) {
     require(_params.maxEntriesPerUser > 0, "maxEntries is 0");
-    require(_params.collateralAddress != address(0), "NFT is null");
     require(_params.commissionInBasicPoints <= 5000, "commission too high");
 
     RaffleStruct memory raffle = RaffleStruct({
