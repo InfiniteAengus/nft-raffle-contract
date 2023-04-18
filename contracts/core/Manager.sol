@@ -267,7 +267,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @dev creates a raffle struct and push it to the raffles array. Some data is stored in the funding data structure
   /// sends an event when finished
   /// @return raffleId
-  function createNFTRaffle(
+  function createRaffle(
     RaffleCreateParam calldata _params,
     PriceStructure[] calldata _prices,
     address[] calldata _collectionWhitelist
