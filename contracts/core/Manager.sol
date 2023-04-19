@@ -61,10 +61,18 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   // Event sent when the raffle is created by the operator
   event RaffleCreated(
     bytes32 indexed raffleId,
-    address indexed nftAddress,
-    uint256 indexed nftId,
+    address indexed collateralAddress,
+    uint256 indexed collateralParam,
     RAFFLETYPE raffleType
   );
+
+  event PriceStructureCreated(
+    bytes32 indexed raffleId,
+    uint256 indexed structureId,
+    uint256 numEntries,
+    uint256 price
+  );
+
   // Event sent when the owner of the nft stakes it for the raffle
   event RaffleStarted(bytes32 indexed raffleId, address indexed seller);
   // Event sent when the raffle is finished (either early cashout or successful completion)
@@ -299,6 +307,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       require(_prices[i].numEntries > 0, "numEntries is 0");
 
       prices[key][i] = _prices[i];
+
+      emit PriceStructureCreated(key, _prices[i].id, _prices[i].numEntries, _prices[i].price);
     }
 
     fundingList[key] = FundingStructure({
