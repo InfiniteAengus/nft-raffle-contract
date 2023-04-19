@@ -1,5 +1,5 @@
 import { DeployFunction } from "hardhat-deploy/types";
-import { MockCoordinator__factory, MockLink__factory } from "../types";
+import { MockCoordinator__factory, MockLink__factory, MockNFT__factory, MockToken__factory } from "../types";
 import { Ship } from "../utils";
 
 const func: DeployFunction = async (hre) => {
@@ -10,6 +10,8 @@ const func: DeployFunction = async (hre) => {
     await deploy(MockCoordinator__factory, {
       args: [linkToken.address]
     });
+    await deploy(MockNFT__factory);
+    await deploy(MockToken__factory);
   }
 };
 

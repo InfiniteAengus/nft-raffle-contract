@@ -248,14 +248,14 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @notice get raffle kay for mapping
   /// @dev use hash of structure as a key
   /// @return bytes32 return key
-  function getRaffleKey(RaffleStruct memory raffle) internal pure returns (bytes32) {
+  function getRaffleKey(RaffleStruct memory raffle) internal view returns (bytes32) {
     return
       keccak256(
         abi.encodePacked(
           raffle.raffleType,
           raffle.collateralAddress,
           raffle.collateralParam,
-          raffle.seller
+          block.number
         )
       );
   }
@@ -343,9 +343,10 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @notice The owner of the NFT can stake it on the raffle. At this moment the raffle starts and can sell entries to players
   /// @dev the owner must have approved this contract before. Otherwise will revert when transferring from the owner
   function stakeNFT(bytes32 _raffleId) external {
-    RaffleStruct storage raffle = raffles[_raffleId];
+    RaffleStruct memory raffle = raffles[_raffleId];
     // Check if the raffle is already created
     require(raffle.raffleType == RAFFLETYPE.NFT, "Invalid raffle type");
+    require(raffle.collateralAddress != address(0), "Invalid nft address");
     require(raffle.status == STATUS.CREATED, "Raffle not CREATED");
     // the owner of the NFT must be the current caller
     IERC721 token = IERC721(raffle.collateralAddress);
@@ -354,6 +355,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     raffle.status = STATUS.ACCEPTED;
     raffle.seller = msg.sender;
 
+    raffles[_raffleId] = raffle;
     // transfer the asset to the contract
     //  IERC721 _asset = IERC721(raffle.collateralAddress);
     token.transferFrom(msg.sender, address(this), raffle.collateralParam); // transfer the token to the contract
@@ -365,15 +367,18 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @notice The owner of the ERC20 can stake it on the raffle. At this moment the raffle starts and can sell entries to players
   /// @dev the owner must have approved this contract before. Otherwise will revert when transferring from the owner
   function stakeERC20(bytes32 _raffleId) external {
-    RaffleStruct storage raffle = raffles[_raffleId];
+    RaffleStruct memory raffle = raffles[_raffleId];
     // Check if the raffle is already created
     require(raffle.raffleType == RAFFLETYPE.ERC20, "Invalid raffle type");
+    require(raffle.collateralAddress != address(0), "Invalid token address");
     require(raffle.status == STATUS.CREATED, "Raffle not CREATED");
 
     IERC20 token = IERC20(raffle.collateralAddress);
 
     raffle.status = STATUS.ACCEPTED;
     raffle.seller = msg.sender;
+
+    raffles[_raffleId] = raffle;
 
     // transfer the asset to the contract
     //  IERC20 _asset = IERC20(raffle.collateralAddress);
@@ -386,7 +391,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @notice The owner of the ETH can stake it on the raffle. At this moment the raffle starts and can sell entries to players
   /// @dev the owner must have approved this contract before. Otherwise will revert when transferring from the owner
   function stakeETH(bytes32 _raffleId) external payable {
-    RaffleStruct storage raffle = raffles[_raffleId];
+    RaffleStruct memory raffle = raffles[_raffleId];
     // Check if the raffle is already created
     require(raffle.raffleType == RAFFLETYPE.ETH, "Invalid raffle type");
     require(raffle.status == STATUS.CREATED, "Raffle not CREATED");
@@ -394,6 +399,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
     raffle.status = STATUS.ACCEPTED;
     raffle.seller = msg.sender;
+
+    raffles[_raffleId] = raffle;
 
     emit RaffleStarted(_raffleId, msg.sender);
   }
