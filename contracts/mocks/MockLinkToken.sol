@@ -10,6 +10,10 @@ contract MockLink is LinkTokenInterface, ERC20 {
 
   constructor() ERC20("Link Token", "LINK") {}
 
+  function mint(uint256 amount) external {
+    _mint(msg.sender, amount);
+  }
+
   /**
    * @dev transfer token to a contract address with additional data if the recipient is a contact.
    * @param _to The address to transfer to.

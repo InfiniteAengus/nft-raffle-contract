@@ -184,7 +184,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   // All the different status a rafVRFCoordinatorfle can have
   enum STATUS {
     CREATED, // the operator creates the raffle
-    ACCEPTED, // the seller stakes the nft for the raffle
+    // ACCEPTED, // the seller stakes the nft for the raffle
     EARLY_CASHOUT, // the seller wants to cashout early
     CANCELLED, // the operator cancels the raffle and transfer the remaining funds after 30 days passes
     CLOSING_REQUESTED, // the operator sets a winner
@@ -209,7 +209,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _linkToken // LINK Token
     )
   {
-    _setupRole(OPERATOR_ROLE, 0x13503B622abC0bD30A7e9687057DF6E8c42Fb928);
+    // _setupRole(OPERATOR_ROLE, msg.sender);
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
     keyHash = _keyHash;
@@ -284,7 +284,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address[] calldata _collectionWhitelist
   ) external payable onlyRole(OPERATOR_ROLE) returns (bytes32) {
     require(_params.endTime > block.timestamp, "Invalid end time");
-    require(_params.maxEntriesPerUser > 0, "maxEntries is 0");
+    // require(_params.maxEntriesPerUser > 0, "maxEntries is 0");
     require(_params.commissionInBasicPoints <= 5000, "commission too high");
 
     RaffleStruct memory raffle = RaffleStruct({
@@ -388,7 +388,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     uint256 _tokenIdUsed
   ) external payable nonReentrant {
     // check end time
-    require(raffles[_raffleId].endTime <= block.timestamp, "Raffle already finished");
+    require(raffles[_raffleId].endTime >= block.timestamp, "Raffle already finished");
 
     // if the raffle requires an nft
     if (raffles[_raffleId].collectionWhitelist.length > 0) {
@@ -410,8 +410,11 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     }
 
     require(msg.sender != address(0), "msg.sender is null"); // 37
-    require(_id > 0, "howMany is 0");
-    require(raffles[_raffleId].status == STATUS.ACCEPTED, "Raffle is not in accepted"); // 1808
+    // require(_id > 0, "howMany is 0");
+    require(
+      raffles[_raffleId].status == STATUS.CREATED,
+      "Raffle is not in created or already finished"
+    ); // 1808
     PriceStructure memory priceStruct = getPriceStructForId(_raffleId, _id);
     require(priceStruct.numEntries > 0, "id not supported");
     require(msg.value == priceStruct.price, "msg.value must be equal to the price"); // 1722
@@ -447,7 +450,10 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     bytes32 _raffleId,
     address[] memory _freePlayers
   ) external nonReentrant onlyRole(OPERATOR_ROLE) {
-    require(raffles[_raffleId].status == STATUS.ACCEPTED, "Raffle is not in accepted");
+    require(
+      raffles[_raffleId].status == STATUS.CREATED,
+      "Raffle is not in created or already finished"
+    );
 
     uint256 freePlayersLength = _freePlayers.length;
     for (uint256 i = 0; i < freePlayersLength; i++) {
@@ -572,12 +578,12 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @dev it triggers Chainlink VRF1 consumer, and generates a random number that is normalized and checked that corresponds to a MW player
   function earlyCashOut(bytes32 _raffleId) external {
     RaffleStruct storage raffle = raffles[_raffleId];
-    FundingStructure memory funding = fundingList[_raffleId];
+    // FundingStructure memory funding = fundingList[_raffleId];
 
     require(raffle.seller == msg.sender, "Not the seller");
     // Check if the raffle is already accepted
-    require(raffle.status == STATUS.ACCEPTED, "Raffle not in accepted status");
-    require(raffle.amountRaised >= funding.minimumFundsInWeis, "Not enough funds raised");
+    require(raffle.status == STATUS.CREATED, "Raffle is not in created or already finished");
+    // require(raffle.amountRaised >= funding.minimumFundsInWeis, "Not enough funds raised");
 
     raffle.status = STATUS.EARLY_CASHOUT;
 
@@ -592,12 +598,13 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @dev it triggers Chainlink VRF1 consumer, and generates a random number that is normalized and checked that corresponds to a MW player
   function setWinner(bytes32 _raffleId) external nonReentrant onlyRole(OPERATOR_ROLE) {
     RaffleStruct storage raffle = raffles[_raffleId];
-    FundingStructure storage funding = fundingList[_raffleId];
+    // FundingStructure storage funding = fundingList[_raffleId];
     // Check if the raffle is already accepted or is called again because early cashout failed
-    require(raffle.status == STATUS.ACCEPTED, "Raffle in wrong status");
-    require(raffle.amountRaised >= funding.minimumFundsInWeis, "Not enough funds raised");
+    require(block.timestamp > raffle.endTime, "Raffle is not finished yet");
+    require(raffle.status == STATUS.CREATED, "Raffle is not in created or already finished");
+    // require(raffle.amountRaised >= funding.minimumFundsInWeis, "Not enough funds raised");
 
-    require(funding.desiredFundsInWeis <= raffle.amountRaised, "Desired funds not raised");
+    // require(funding.desiredFundsInWeis <= raffle.amountRaised, "Desired funds not raised");
     raffle.status = STATUS.CLOSING_REQUESTED;
 
     // this call trigers the VRF v1 process from Chainlink
@@ -633,7 +640,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     );
 
     // only if the raffle is in accepted status the NFT is staked and could have entries sold
-    if (raffle.status == STATUS.ACCEPTED) {
+    if (raffle.status == STATUS.CREATED) {
       // transfer nft to the owner
       IERC721 _asset = IERC721(raffle.collateralAddress);
       _asset.transferFrom(address(this), raffle.seller, raffle.collateralParam);
@@ -692,5 +699,9 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address _player
   ) external view returns (ClaimStruct memory) {
     return claimsData[keccak256(abi.encode(_player, _raffleId))];
+  }
+
+  function transferOwnership(address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    grantRole(DEFAULT_ADMIN_ROLE, to);
   }
 }

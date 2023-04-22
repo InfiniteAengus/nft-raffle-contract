@@ -65,6 +65,8 @@ describe("Raffle Manager test", () => {
     token = await ship.connect(MockToken__factory);
 
     await manager.grantRole(await manager.OPERATOR_ROLE(), alice.address);
+    await linkToken.mint(parseEther("10"));
+    await linkToken.transfer(manager.address, parseEther("10"));
   });
 
   it("create a raffle", async () => {
@@ -145,47 +147,28 @@ describe("Raffle Manager test", () => {
     nftRaffleKey = expectKey;
   });
 
-  // it("stake nft test", async () => {
-  //   await expect(manager.stakeNFT(nftRaffleKey)).to.be.revertedWith("ERC721: invalid token ID");
+  it("buy entry", async () => {
+    await expect(manager.buyEntry(nftRaffleKey, 0, constants.AddressZero, 0)).to.revertedWith(
+      "msg.value must be equal to the price",
+    );
 
-  //   await nft.mint(1);
-  //   await expect(manager.stakeNFT(nftRaffleKey)).to.be.revertedWith(
-  //     "ERC721: caller is not token owner or approved",
-  //   );
+    await expect(
+      manager.buyEntry(nftRaffleKey, 0, constants.AddressZero, 0, {
+        value: parseEther("0.1"),
+      }),
+    )
+      .to.be.emit(manager, "EntrySold")
+      .withArgs(nftRaffleKey, deployer.address, 0, 0);
+  });
 
-  //   await nft.approve(manager.address, 1);
-  //   await manager.stakeNFT(nftRaffleKey);
+  it("finish raffle", async () => {
+    await expect(manager.connect(alice).setWinner(nftRaffleKey)).to.revertedWith(
+      "Raffle is not finished yet",
+    );
 
-  //   const raffleData = await manager.raffles(nftRaffleKey);
-  //   expect(raffleData.seller).to.eq(deployer.address);
-  //   expect(await nft.ownerOf(1)).to.eq(manager.address);
-  // });
-
-  // it("stake token test", async () => {
-  //   await expect(manager.stakeERC20(erc20RaffleKey)).to.be.revertedWith("ERC20: insufficient allowance");
-
-  //   await token.approve(manager.address, parseEther("10"));
-  //   await expect(manager.stakeERC20(erc20RaffleKey)).to.be.revertedWith(
-  //     "ERC20: transfer amount exceeds balance",
-  //   );
-
-  //   await token.mint(parseEther("10"));
-  //   await manager.stakeERC20(erc20RaffleKey);
-
-  //   const raffleData = await manager.raffles(erc20RaffleKey);
-  //   expect(raffleData.seller).to.eq(deployer.address);
-  //   expect(await token.balanceOf(manager.address)).to.eq(parseEther("10"));
-  // });
-
-  // it("stake eth test", async () => {
-  //   await expect(manager.stakeETH(ethRaffleKey)).to.be.revertedWith("Invalid deposit amount");
-
-  //   await manager.stakeETH(ethRaffleKey, {
-  //     value: parseEther("10"),
-  //   });
-
-  //   const raffleData = await manager.raffles(ethRaffleKey);
-  //   expect(raffleData.seller).to.eq(deployer.address);
-  //   expect(await ship.provider.getBalance(manager.address)).to.eq(parseEther("10"));
-  // });
+    await time.increase(3600);
+    await expect(manager.connect(alice).setWinner(nftRaffleKey))
+      .to.emit(manager, "SetWinnerTriggered")
+      .withArgs(nftRaffleKey, parseEther("0.1"));
+  });
 });
