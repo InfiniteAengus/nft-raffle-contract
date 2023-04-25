@@ -24,7 +24,8 @@ contract Vault is Ownable {
     uint8 v;
   }
 
-  constructor() {}
+  /// @param _signer signer address
+  constructor(address _signer) {}
 
   // fallback function to accept eth
   receive() external payable {}

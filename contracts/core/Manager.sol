@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "hardhat/console.sol";
+
 /// @title Raffles Manager
 /// @notice It consumes VRF v1 from Chainlink. It has the role
 /// There are two type of roles - operator and user
@@ -84,6 +86,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address indexed collateralAddress,
     uint256 indexed collateralParam,
     uint256 endTime,
+    uint256 ticketSupply,
     address seller,
     RAFFLETYPE raffleType,
     bool operatorCreated
@@ -131,8 +134,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
   // Every raffle has a funding structure.
   struct FundingStructure {
-    uint256 minEntriesCount;
-    uint256 maxEntriesCount;
+    uint256 minTicketCount;
+    uint256 maxTicketCount;
   }
   mapping(bytes32 => FundingStructure) public fundingList;
 
@@ -143,6 +146,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   }
   // every raffle has a sorted array of EntriesBought. Each element is created when calling
   // either buyEntry or giveBatchEntriesForFree
+  mapping(bytes32 => uint256) public soldTicketCount;
   mapping(bytes32 => uint256) public entriesCount;
   mapping(bytes32 => mapping(uint256 => EntriesBought)) public entries;
 
@@ -158,8 +162,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     RAFFLETYPE raffleType; // type of raffle
     address collateralAddress; // The address of the NFT of the raffle
     uint256 collateralParam; // The id of the NFT (ERC721)
-    uint256 minEntriesCount; // min entries count to sell
-    uint256 maxEntriesCount; // max entries count to sell
+    uint256 minTicketCount; // min entries count to sell
+    uint256 maxTicketCount; // max entries count to sell
     uint256 endTime; // end time of raffle
   }
 
@@ -169,7 +173,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address collateralAddress; // The address of the NFT of the raffle
     uint256 collateralParam; // The id of the NFT (ERC721)
     uint256 ticketSupply; // max entries count to sell
-    uint256 entryPrice; // mint price of ticket
+    uint256 ticketPrice; // mint price of ticket
     uint256 endTime; // end time of raffle
   }
 
@@ -186,7 +190,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     address seller; // address of the seller of the NFT
     uint256 endTime; // end time of raffle
     uint256 cancellingDate;
-    uint256 entryPrice;
+    uint256 ticketPrice;
     address[] collectionWhitelist; // addresses of the required nfts. Will be empty if no NFT is required to buy
   }
   // The main structure is an array of raffles
@@ -262,7 +266,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       seller: msg.sender,
       endTime: _params.endTime,
       cancellingDate: 0,
-      entryPrice: 0,
+      ticketPrice: 0,
       collectionWhitelist: _collectionWhitelist
     });
 
@@ -278,8 +282,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     }
 
     fundingList[key] = FundingStructure({
-      minEntriesCount: _params.minEntriesCount,
-      maxEntriesCount: _params.maxEntriesCount
+      minTicketCount: _params.minTicketCount,
+      maxTicketCount: _params.maxTicketCount
     });
 
     if (_params.raffleType == RAFFLETYPE.NFT) {
@@ -301,6 +305,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _params.collateralAddress,
       _params.collateralParam,
       _params.endTime,
+      _params.maxTicketCount,
       msg.sender,
       _params.raffleType,
       true
@@ -333,7 +338,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     RaffleStruct memory raffle = RaffleStruct({
       raffleType: _params.raffleType,
       status: STATUS.CREATED,
-      operatorCreated: true,
+      operatorCreated: false,
       collateralAddress: _params.collateralAddress,
       collateralParam: _params.collateralParam,
       winner: address(0),
@@ -342,17 +347,14 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       seller: msg.sender,
       endTime: _params.endTime,
       cancellingDate: 0,
-      entryPrice: _params.entryPrice,
+      ticketPrice: _params.ticketPrice,
       collectionWhitelist: _collectionWhitelist
     });
 
     bytes32 key = _getRaffleKey(raffle);
     raffles[key] = raffle;
 
-    fundingList[key] = FundingStructure({
-      minEntriesCount: 0,
-      maxEntriesCount: _params.ticketSupply
-    });
+    fundingList[key] = FundingStructure({minTicketCount: 0, maxTicketCount: _params.ticketSupply});
 
     if (_params.raffleType == RAFFLETYPE.NFT) {
       // transfer the asset to the contract
@@ -373,6 +375,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _params.collateralAddress,
       _params.collateralParam,
       _params.endTime,
+      _params.ticketSupply,
       msg.sender,
       _params.raffleType,
       true
@@ -388,17 +391,21 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @notice If the operator set requiredNFTs when creating the raffle, only the owners of nft on that collection can make a call to this method. This will be
   /// used for special raffles
   /// @param _raffleId: id of the raffle
-  /// @param _idOrEntries: id of the price structure if raffle is admin raffle, else count of entry
+  /// @param _idOrTicketCount: id of the price structure if raffle is admin raffle, else count of entry
   /// @param _collection: collection of the tokenId used. Not used if there is no required nft on the raffle
   /// @param _tokenIdUsed: id of the token used in private raffles (to avoid abuse can not be reused on the same raffle)
   function buyEntry(
     bytes32 _raffleId,
-    uint256 _idOrEntries,
+    uint256 _idOrTicketCount,
     address _collection,
     uint256 _tokenIdUsed
   ) external payable nonReentrant {
     // check end time
     require(raffles[_raffleId].endTime >= block.timestamp, "Raffle already finished");
+    require(
+      raffles[_raffleId].operatorCreated || _idOrTicketCount > 0,
+      "Ticket count should bigger than 0"
+    );
 
     // if the raffle requires an nft
     if (raffles[_raffleId].collectionWhitelist.length > 0) {
@@ -425,17 +432,17 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       "Raffle is not in created or already finished"
     ); // 1808
 
-    uint256 entryCount = 0;
+    uint256 ticketCount = 0;
     uint256 price = 0;
     if (raffles[_raffleId].operatorCreated) {
-      PriceStructure memory priceStruct = _getPriceStructForId(_raffleId, _idOrEntries);
+      PriceStructure memory priceStruct = _getPriceStructForId(_raffleId, _idOrTicketCount);
       require(priceStruct.numEntries > 0, "id not supported");
 
-      entryCount = priceStruct.numEntries;
+      ticketCount = priceStruct.numEntries;
       price = priceStruct.price;
     } else {
-      entryCount = _idOrEntries;
-      price = raffles[_raffleId].entryPrice * entryCount;
+      ticketCount = _idOrTicketCount;
+      price = raffles[_raffleId].ticketPrice * ticketCount;
     }
 
     bytes32 hash = keccak256(abi.encode(msg.sender, _raffleId));
@@ -443,10 +450,17 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     require(msg.value == price, "msg.value must be equal to the price"); // 1722
     // check there are enough entries left for this particular user
     require(
-      claimsData[hash].numEntriesPerUser + entryCount <= fundingList[_raffleId].maxEntriesCount / 5,
+      raffles[_raffleId].operatorCreated ||
+        claimsData[hash].numEntriesPerUser + ticketCount <=
+        fundingList[_raffleId].maxTicketCount / 5,
       "Bought too many entries()"
     );
+    require(
+      soldTicketCount[_raffleId] + ticketCount <= fundingList[_raffleId].maxTicketCount,
+      "Max ticket amount exceed"
+    );
 
+    soldTicketCount[_raffleId] += ticketCount;
     entriesCount[_raffleId]++;
     // add a new element to the entriesBought array, used to calc the winner
     EntriesBought memory entryBought = EntriesBought({
@@ -457,10 +471,10 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
     raffles[_raffleId].amountRaised += msg.value; // 6917 gas
     //update claim data
-    claimsData[hash].numEntriesPerUser += entryCount;
+    claimsData[hash].numEntriesPerUser += ticketCount;
     claimsData[hash].amountSpentInWeis += msg.value;
 
-    emit EntrySold(_raffleId, msg.sender, entryCount, entriesCount[_raffleId], price); // 2377
+    emit EntrySold(_raffleId, msg.sender, ticketCount, entriesCount[_raffleId], price); // 2377
   }
 
   // // The operator can add free entries to the raffle
@@ -523,7 +537,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     require(raffle.status == STATUS.CREATED, "Raffle is not in created or already finished");
     // require sold tickets should bigger than min tickets
     require(
-      !raffle.operatorCreated || entriesCount[_raffleId] >= funding.minEntriesCount,
+      !raffle.operatorCreated || soldTicketCount[_raffleId] >= funding.minTicketCount,
       "Not enough funds raised"
     );
 
