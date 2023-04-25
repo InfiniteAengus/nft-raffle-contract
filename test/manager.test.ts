@@ -2,6 +2,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import {
   Manager,
   Manager__factory,
+  MockCoordinator,
+  MockCoordinator__factory,
   MockLink,
   MockLink__factory,
   MockNFT,
@@ -23,6 +25,7 @@ const { expect } = chai;
 let ship: Ship;
 let manager: Manager;
 let linkToken: MockLink;
+let vrfCoordinator: MockCoordinator;
 let nft: MockNFT;
 let token: MockToken;
 
@@ -61,6 +64,7 @@ describe("Raffle Manager test", () => {
 
     manager = await ship.connect(Manager__factory);
     linkToken = await ship.connect(MockLink__factory);
+    vrfCoordinator = await ship.connect(MockCoordinator__factory);
     nft = await ship.connect(MockNFT__factory);
     token = await ship.connect(MockToken__factory);
 
@@ -170,5 +174,11 @@ describe("Raffle Manager test", () => {
     await expect(manager.connect(alice).setWinner(nftRaffleKey))
       .to.emit(manager, "SetWinnerTriggered")
       .withArgs(nftRaffleKey, parseEther("0.1"));
+
+    const requestKey = await manager.requestKeys(nftRaffleKey);
+    console.log(requestKey);
+
+    await vrfCoordinator.callBackWithRandomness(requestKey, 0, manager.address);
+    expect(await nft.ownerOf(1)).to.eq(deployer.address);
   });
 });
