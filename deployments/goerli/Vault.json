@@ -1,0 +1,333 @@
+{
+  "address": "0x2C9633bd4c03A61C3a5F521F54d807eEb7fF9b0c",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_signer",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ReferralRewardClaimed",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimFund",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "r",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint8",
+              "name": "v",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct Vault.Sig",
+          "name": "sig",
+          "type": "tuple"
+        }
+      ],
+      "name": "claimReferralReward",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "claimedDate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "_newAddress",
+          "type": "address"
+        }
+      ],
+      "name": "setSignerAddress",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "signer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "transactionHash": "0x7c1bddc3ca663394f46d3ccdbc91e9b645a6a7b563f013ce7948bb1ec1417ab7",
+  "receipt": {
+    "to": null,
+    "from": "0xf5CA36c9873d61Bc28C117BD470981Ef6647A685",
+    "contractAddress": "0x2C9633bd4c03A61C3a5F521F54d807eEb7fF9b0c",
+    "transactionIndex": 46,
+    "gasUsed": "457041",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000001000000000000020000000000000000000000020000000000000000000800000000000000000000000000000000400000000000000000000000000000000000000000000000000200000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x7a514cb5b9b1dd739e45a272edc40c30930955488476d34f6a71712ec2992d66",
+    "transactionHash": "0x7c1bddc3ca663394f46d3ccdbc91e9b645a6a7b563f013ce7948bb1ec1417ab7",
+    "logs": [
+      {
+        "transactionIndex": 46,
+        "blockNumber": 8924640,
+        "transactionHash": "0x7c1bddc3ca663394f46d3ccdbc91e9b645a6a7b563f013ce7948bb1ec1417ab7",
+        "address": "0x2C9633bd4c03A61C3a5F521F54d807eEb7fF9b0c",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x000000000000000000000000f5ca36c9873d61bc28c117bd470981ef6647a685"
+        ],
+        "data": "0x",
+        "logIndex": 106,
+        "blockHash": "0x7a514cb5b9b1dd739e45a272edc40c30930955488476d34f6a71712ec2992d66"
+      }
+    ],
+    "blockNumber": 8924640,
+    "cumulativeGasUsed": "4550371",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x6933E63B7786769E4f21F6015566569DBd450cFC"
+  ],
+  "numDeployments": 3,
+  "solcInputHash": "dda750130b405b2f274a7b31493167ce",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.19+commit.7dd6d404\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_signer\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ReferralRewardClaimed\",\"type\":\"event\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"claimFund\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"r\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"v\",\"type\":\"uint8\"}],\"internalType\":\"struct Vault.Sig\",\"name\":\"sig\",\"type\":\"tuple\"}],\"name\":\"claimReferralReward\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"claimedDate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address payable\",\"name\":\"_newAddress\",\"type\":\"address\"}],\"name\":\"setSignerAddress\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"signer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}],\"devdoc\":{\"details\":\"users can withdraw referral reward in this contract with backend signatures\",\"events\":{\"ReferralRewardClaimed(address,uint256)\":{\"details\":\"triggers when claimed referral reward\"}},\"kind\":\"dev\",\"methods\":{\"claimFund(uint256)\":{\"details\":\"claim funds\",\"params\":{\"amount\":\"amount to claim\"}},\"claimReferralReward(uint256,(bytes32,bytes32,uint8))\":{\"params\":{\"amount\":\"amount to claim\",\"sig\":\"sigature of signer\"}},\"constructor\":{\"params\":{\"_signer\":\"signer address\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"setSignerAddress(address)\":{\"details\":\"Change the wallet of the platform signer\",\"params\":{\"_newAddress\":\"new address of the platform signer\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"stateVariables\":{\"claimedDate\":{\"details\":\"saved last claimed time\"},\"signer\":{\"details\":\"signer address\"}},\"title\":\"Vault contract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"all operator raffle funds and platform fee saves on here. referral system integrated to this contract\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/core/Vault.sol\":\"Vault\"},\"evmVersion\":\"paris\",\"libraries\":{\":__CACHE_BREAKER__\":\"0x00000000d41867734bbee4c6863d9255b2b06ac1\"},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v4.7.0) (access/Ownable.sol)\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor() {\\n        _transferOwnership(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        _checkOwner();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if the sender is not the owner.\\n     */\\n    function _checkOwner() internal view virtual {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0xa94b34880e3c1b0b931662cb1c09e5dfa6662f31cba80e07c5ee71cd135c9673\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0xe2e337e6dde9ef6b680e07338c493ebea1b5fd09b43424112868e9cc1706bca7\",\"license\":\"MIT\"},\"contracts/core/Vault.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\npragma solidity ^0.8.9;\\n\\nimport \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\n\\n/// @title Vault contract\\n/// @notice all operator raffle funds and platform fee saves on here.\\n/// referral system integrated to this contract\\n/// @dev users can withdraw referral reward in this contract with backend signatures\\ncontract Vault is Ownable {\\n  // events\\n  /// @dev triggers when claimed referral reward\\n  event ReferralRewardClaimed(address indexed to, uint256 amount);\\n\\n  /// @dev saved last claimed time\\n  mapping(address => uint256) public claimedDate;\\n  /// @dev signer address\\n  address public signer;\\n\\n  // signature structure\\n  struct Sig {\\n    bytes32 r;\\n    bytes32 s;\\n    uint8 v;\\n  }\\n\\n  /// @param _signer signer address\\n  constructor(address _signer) {}\\n\\n  // fallback function to accept eth\\n  receive() external payable {}\\n\\n  fallback() external payable {}\\n\\n  // external functions\\n  /// @param amount amount to claim\\n  /// @param sig sigature of signer\\n  function claimReferralReward(uint256 amount, Sig calldata sig) external {\\n    require(_validateClaimParams(amount, sig), \\\"Invalid signature\\\");\\n\\n    (bool sent, ) = msg.sender.call{value: amount}(\\\"\\\");\\n    require(sent, \\\"Failed to send Ether\\\");\\n\\n    emit ReferralRewardClaimed(msg.sender, amount);\\n  }\\n\\n  /// @param _newAddress new address of the platform signer\\n  /// @dev Change the wallet of the platform signer\\n  function setSignerAddress(address payable _newAddress) external onlyOwner {\\n    signer = _newAddress;\\n  }\\n\\n  /// @param amount amount to claim\\n  /// @dev claim funds\\n  function claimFund(uint256 amount) external onlyOwner {\\n    (bool sent, ) = msg.sender.call{value: amount}(\\\"\\\");\\n    require(sent, \\\"Failed to send Ether\\\");\\n  }\\n\\n  // internal functions\\n  /// @param amount amount to claim\\n  /// @param sig signature of signer\\n  /// @dev validate claim amount of user\\n  function _validateClaimParams(uint256 amount, Sig calldata sig) internal view returns (bool) {\\n    bytes32 messageHash = keccak256(\\n      abi.encodePacked(_msgSender(), amount, claimedDate[_msgSender()])\\n    );\\n\\n    bytes32 ethSignedMessageHash = keccak256(\\n      abi.encodePacked(\\\"\\\\x19Ethereum Signed Message:\\\\n32\\\", messageHash)\\n    );\\n\\n    return signer == ecrecover(ethSignedMessageHash, sig.v, sig.r, sig.s);\\n  }\\n}\\n\",\"keccak256\":\"0x0e2ffd998d4e73f7e3c5dea7f3a5f2b118b7aee3e2b879b78d7910719e45b090\",\"license\":\"UNLICENSED\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060405161079e38038061079e83398101604081905261002f9161008e565b6100383361003e565b506100be565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b6000602082840312156100a057600080fd5b81516001600160a01b03811681146100b757600080fd5b9392505050565b6106d1806100cd6000396000f3fe6080604052600436106100795760003560e01c8063715018a61161004b578063715018a61461013a5780638da5cb5b1461014f578063a1f4e1711461016d578063f2fde38b1461018d57005b8063046dc166146100825780630b3ec841146100a2578063238ac933146100e257806331c7364f1461011a57005b3661008057005b005b34801561008e57600080fd5b5061008061009d366004610603565b6101ad565b3480156100ae57600080fd5b506100cf6100bd366004610603565b60016020526000908152604090205481565b6040519081526020015b60405180910390f35b3480156100ee57600080fd5b50600254610102906001600160a01b031681565b6040516001600160a01b0390911681526020016100d9565b34801561012657600080fd5b50610080610135366004610627565b6101d7565b34801561014657600080fd5b50610080610277565b34801561015b57600080fd5b506000546001600160a01b0316610102565b34801561017957600080fd5b50610080610188366004610640565b61028b565b34801561019957600080fd5b506100806101a8366004610603565b61039e565b6101b5610417565b600280546001600160a01b0319166001600160a01b0392909216919091179055565b6101df610417565b604051600090339083908381818185875af1925050503d8060008114610221576040519150601f19603f3d011682016040523d82523d6000602084013e610226565b606091505b50509050806102735760405162461bcd60e51b81526020600482015260146024820152732330b4b632b2103a379039b2b7321022ba3432b960611b60448201526064015b60405180910390fd5b5050565b61027f610417565b6102896000610471565b565b61029582826104c1565b6102d55760405162461bcd60e51b8152602060048201526011602482015270496e76616c6964207369676e617475726560781b604482015260640161026a565b604051600090339084908381818185875af1925050503d8060008114610317576040519150601f19603f3d011682016040523d82523d6000602084013e61031c565b606091505b50509050806103645760405162461bcd60e51b81526020600482015260146024820152732330b4b632b2103a379039b2b7321022ba3432b960611b604482015260640161026a565b60405183815233907f5be4d22009fea85381595ed91090bc5c0bc92a93fe07ed7472c5888eb1993f839060200160405180910390a2505050565b6103a6610417565b6001600160a01b03811661040b5760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b606482015260840161026a565b61041481610471565b50565b6000546001600160a01b031633146102895760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161026a565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b33600081815260016020908152604080832054815160609590951b6bffffffffffffffffffffffff19168584015260348501879052605480860191909152815180860390910181526074850190915280519101207f19457468657265756d205369676e6564204d6573736167653a0a333200000000609484015260b083018190529091829060d0016040516020818303038152906040528051906020012090506001818560400160208101906105779190610678565b604080516000815260208181018084529490945260ff909216908201528635606082015290860135608082015260a0016020604051602081039080840390855afa1580156105c9573d6000803e3d6000fd5b5050604051601f1901516002546001600160a01b039182169116149695505050505050565b6001600160a01b038116811461041457600080fd5b60006020828403121561061557600080fd5b8135610620816105ee565b9392505050565b60006020828403121561063957600080fd5b5035919050565b600080828403608081121561065457600080fd5b833592506060601f198201121561066a57600080fd5b506020830190509250929050565b60006020828403121561068a57600080fd5b813560ff8116811461062057600080fdfea26469706673582212204cc880d873165f5aa23eac2eaf54e0f206d64218212a15f99c2745571e6a8f3364736f6c63430008130033",
+  "deployedBytecode": "0x6080604052600436106100795760003560e01c8063715018a61161004b578063715018a61461013a5780638da5cb5b1461014f578063a1f4e1711461016d578063f2fde38b1461018d57005b8063046dc166146100825780630b3ec841146100a2578063238ac933146100e257806331c7364f1461011a57005b3661008057005b005b34801561008e57600080fd5b5061008061009d366004610603565b6101ad565b3480156100ae57600080fd5b506100cf6100bd366004610603565b60016020526000908152604090205481565b6040519081526020015b60405180910390f35b3480156100ee57600080fd5b50600254610102906001600160a01b031681565b6040516001600160a01b0390911681526020016100d9565b34801561012657600080fd5b50610080610135366004610627565b6101d7565b34801561014657600080fd5b50610080610277565b34801561015b57600080fd5b506000546001600160a01b0316610102565b34801561017957600080fd5b50610080610188366004610640565b61028b565b34801561019957600080fd5b506100806101a8366004610603565b61039e565b6101b5610417565b600280546001600160a01b0319166001600160a01b0392909216919091179055565b6101df610417565b604051600090339083908381818185875af1925050503d8060008114610221576040519150601f19603f3d011682016040523d82523d6000602084013e610226565b606091505b50509050806102735760405162461bcd60e51b81526020600482015260146024820152732330b4b632b2103a379039b2b7321022ba3432b960611b60448201526064015b60405180910390fd5b5050565b61027f610417565b6102896000610471565b565b61029582826104c1565b6102d55760405162461bcd60e51b8152602060048201526011602482015270496e76616c6964207369676e617475726560781b604482015260640161026a565b604051600090339084908381818185875af1925050503d8060008114610317576040519150601f19603f3d011682016040523d82523d6000602084013e61031c565b606091505b50509050806103645760405162461bcd60e51b81526020600482015260146024820152732330b4b632b2103a379039b2b7321022ba3432b960611b604482015260640161026a565b60405183815233907f5be4d22009fea85381595ed91090bc5c0bc92a93fe07ed7472c5888eb1993f839060200160405180910390a2505050565b6103a6610417565b6001600160a01b03811661040b5760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201526564647265737360d01b606482015260840161026a565b61041481610471565b50565b6000546001600160a01b031633146102895760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161026a565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b33600081815260016020908152604080832054815160609590951b6bffffffffffffffffffffffff19168584015260348501879052605480860191909152815180860390910181526074850190915280519101207f19457468657265756d205369676e6564204d6573736167653a0a333200000000609484015260b083018190529091829060d0016040516020818303038152906040528051906020012090506001818560400160208101906105779190610678565b604080516000815260208181018084529490945260ff909216908201528635606082015290860135608082015260a0016020604051602081039080840390855afa1580156105c9573d6000803e3d6000fd5b5050604051601f1901516002546001600160a01b039182169116149695505050505050565b6001600160a01b038116811461041457600080fd5b60006020828403121561061557600080fd5b8135610620816105ee565b9392505050565b60006020828403121561063957600080fd5b5035919050565b600080828403608081121561065457600080fd5b833592506060601f198201121561066a57600080fd5b506020830190509250929050565b60006020828403121561068a57600080fd5b813560ff8116811461062057600080fdfea26469706673582212204cc880d873165f5aa23eac2eaf54e0f206d64218212a15f99c2745571e6a8f3364736f6c63430008130033",
+  "devdoc": {
+    "details": "users can withdraw referral reward in this contract with backend signatures",
+    "events": {
+      "ReferralRewardClaimed(address,uint256)": {
+        "details": "triggers when claimed referral reward"
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "claimFund(uint256)": {
+        "details": "claim funds",
+        "params": {
+          "amount": "amount to claim"
+        }
+      },
+      "claimReferralReward(uint256,(bytes32,bytes32,uint8))": {
+        "params": {
+          "amount": "amount to claim",
+          "sig": "sigature of signer"
+        }
+      },
+      "constructor": {
+        "params": {
+          "_signer": "signer address"
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "setSignerAddress(address)": {
+        "details": "Change the wallet of the platform signer",
+        "params": {
+          "_newAddress": "new address of the platform signer"
+        }
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    },
+    "stateVariables": {
+      "claimedDate": {
+        "details": "saved last claimed time"
+      },
+      "signer": {
+        "details": "signer address"
+      }
+    },
+    "title": "Vault contract",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "notice": "all operator raffle funds and platform fee saves on here. referral system integrated to this contract",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 781,
+        "contract": "contracts/core/Vault.sol:Vault",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 6496,
+        "contract": "contracts/core/Vault.sol:Vault",
+        "label": "claimedDate",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 6499,
+        "contract": "contracts/core/Vault.sol:Vault",
+        "label": "signer",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_address"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

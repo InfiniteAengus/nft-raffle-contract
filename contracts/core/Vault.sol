@@ -10,10 +10,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Vault is Ownable {
   // events
   /// @dev triggers when claimed referral reward
-  event ReferralRewardCliamed(address indexed to, uint256 amount);
+  event ReferralRewardClaimed(address indexed to, uint256 amount);
 
   /// @dev saved last claimed time
-  mapping(address => uint256) claimedDate;
+  mapping(address => uint256) public claimedDate;
   /// @dev signer address
   address public signer;
 
@@ -41,7 +41,7 @@ contract Vault is Ownable {
     (bool sent, ) = msg.sender.call{value: amount}("");
     require(sent, "Failed to send Ether");
 
-    emit ReferralRewardCliamed(msg.sender, amount);
+    emit ReferralRewardClaimed(msg.sender, amount);
   }
 
   /// @param _newAddress new address of the platform signer

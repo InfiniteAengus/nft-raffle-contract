@@ -103,7 +103,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   event EntrySold(
     bytes32 indexed raffleId,
     address indexed buyer,
-    uint256 numEntries,
+    uint256 numTickets,
     uint256 soldEntries,
     uint256 price
   );
@@ -121,13 +121,20 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   event Refund(bytes32 indexed raffleId, uint256 amountInWeis, address indexed player);
   event EarlyCashoutTriggered(bytes32 indexed raffleId, uint256 amountRaised);
   event SetWinnerTriggered(bytes32 indexed raffleId, uint256 amountRaised);
+  // When new price structure created
+  event PriceStructureCreated(
+    bytes32 indexed raffleId,
+    uint256 id,
+    uint256 numTickets,
+    uint256 price
+  );
 
   /* every raffle has an array of price structure (max size = 5) with the different 
     prices for the different entries bought. The price for 1 entry is different than 
     for 5 entries where there is a discount*/
   struct PriceStructure {
     uint256 id;
-    uint256 numEntries;
+    uint256 numTickets;
     uint256 price;
   }
   mapping(bytes32 => PriceStructure[5]) public prices;
@@ -198,7 +205,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
   // Map that contains the number of entries each user has bought, to prevent abuse, and the claiming info
   struct ClaimStruct {
-    uint256 numEntriesPerUser;
+    uint256 numTicketsPerUser;
     uint256 amountSpentInWeis;
     bool claimed;
   }
@@ -276,9 +283,11 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     require(_prices.length > 0, "No prices");
 
     for (uint256 i = 0; i < _prices.length; i++) {
-      require(_prices[i].numEntries > 0, "numEntries is 0");
+      require(_prices[i].numTickets > 0, "numTickets is 0");
 
       prices[key][i] = _prices[i];
+
+      emit PriceStructureCreated(key, _prices[i].id, _prices[i].numTickets, _prices[i].price);
     }
 
     fundingList[key] = FundingStructure({
@@ -370,6 +379,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       require(msg.value == raffle.collateralParam, "Invalid deposit amount");
     }
 
+    emit PriceStructureCreated(key, 1, 1, _params.ticketPrice);
     emit RaffleCreated(
       key,
       _params.collateralAddress,
@@ -436,9 +446,9 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     uint256 price = 0;
     if (raffles[_raffleId].operatorCreated) {
       PriceStructure memory priceStruct = _getPriceStructForId(_raffleId, _idOrTicketCount);
-      require(priceStruct.numEntries > 0, "id not supported");
+      require(priceStruct.numTickets > 0, "id not supported");
 
-      ticketCount = priceStruct.numEntries;
+      ticketCount = priceStruct.numTickets;
       price = priceStruct.price;
     } else {
       ticketCount = _idOrTicketCount;
@@ -451,7 +461,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     // check there are enough entries left for this particular user
     require(
       raffles[_raffleId].operatorCreated ||
-        claimsData[hash].numEntriesPerUser + ticketCount <=
+        claimsData[hash].numTicketsPerUser + ticketCount <=
         fundingList[_raffleId].maxTicketCount / 5,
       "Bought too many entries()"
     );
@@ -471,7 +481,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
     raffles[_raffleId].amountRaised += msg.value; // 6917 gas
     //update claim data
-    claimsData[hash].numEntriesPerUser += ticketCount;
+    claimsData[hash].numTicketsPerUser += ticketCount;
     claimsData[hash].amountSpentInWeis += msg.value;
 
     emit EntrySold(_raffleId, msg.sender, ticketCount, entriesCount[_raffleId], price); // 2377
@@ -494,7 +504,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   //   for (uint256 i = 0; i < freePlayersLength; i++) {
   //     address entry = _freePlayers[i];
   //     if (
-  //       claimsData[keccak256(abi.encode(entry, _raffleId))].numEntriesPerUser + 1 <=
+  //       claimsData[keccak256(abi.encode(entry, _raffleId))].numTicketsPerUser + 1 <=
   //       raffles[_raffleId].maxEntries
   //     ) {
   //       // add a new element to the entriesBought array.
@@ -506,7 +516,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   //       entries[_raffleId][entriesCount[_raffleId]] = entryBought;
   //       entriesCount[_raffleId]++;
 
-  //       claimsData[keccak256(abi.encode(entry, _raffleId))].numEntriesPerUser++;
+  //       claimsData[keccak256(abi.encode(entry, _raffleId))].numTicketsPerUser++;
   //     }
   //   }
 
@@ -815,7 +825,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
         return prices[_idRaffle][i];
       }
     }
-    return PriceStructure({id: 0, numEntries: 0, price: 0});
+    return PriceStructure({id: 0, numTickets: 0, price: 0});
   }
 
   /// @param collection address of collection

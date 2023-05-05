@@ -49,6 +49,7 @@ const config: HardhatUserConfig = {
       url: node_url("goerli"),
       accounts: accounts("goerli"),
       tags: ["test", "live"],
+      gasPrice: 200e9,
     },
     bsc: {
       url: node_url("bsc"),
@@ -77,7 +78,7 @@ const config: HardhatUserConfig = {
           browserURL: "https://scan.test.btcs.network/",
         },
       },
-    ]
+    ],
   },
   solidity: {
     compilers: [

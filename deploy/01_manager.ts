@@ -7,7 +7,7 @@ import { constants } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
 const func: DeployFunction = async (hre) => {
-  const { deploy, connect, accounts } = await Ship.init(hre);
+  const { deploy, connect, provider, accounts } = await Ship.init(hre);
 
   let config;
 
@@ -34,6 +34,8 @@ const func: DeployFunction = async (hre) => {
   const vault = await deploy(Vault__factory, {
     args: [accounts.signer.address],
   });
+
+  console.log(vault.address, config);
 
   await deploy(Manager__factory, {
     args: [

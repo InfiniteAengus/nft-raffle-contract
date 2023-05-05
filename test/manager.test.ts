@@ -101,27 +101,27 @@ describe("Raffle Manager test", () => {
       const prices: Manager.PriceStructureStruct[] = [
         {
           id: 0,
-          numEntries: 1,
+          numTickets: 1,
           price: parseEther("0.1"),
         },
         {
           id: 1,
-          numEntries: 5,
+          numTickets: 5,
           price: parseEther("0.4"),
         },
         {
           id: 2,
-          numEntries: 10,
+          numTickets: 10,
           price: parseEther("0.7"),
         },
         {
           id: 3,
-          numEntries: 20,
+          numTickets: 20,
           price: parseEther("0.13"),
         },
         {
           id: 4,
-          numEntries: 30,
+          numTickets: 30,
           price: parseEther("0.19"),
         },
       ];
