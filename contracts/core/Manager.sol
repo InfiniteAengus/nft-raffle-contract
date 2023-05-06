@@ -388,7 +388,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _params.ticketSupply,
       msg.sender,
       _params.raffleType,
-      true
+      false
     );
 
     return key;

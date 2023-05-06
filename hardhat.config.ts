@@ -61,6 +61,11 @@ const config: HardhatUserConfig = {
       accounts: accounts("bscTestnet"),
       tags: ["prod", "live"],
     },
+    maticTestnet: {
+      url: node_url("maticTestnet"),
+      accounts: accounts("maticTestnet"),
+      tags: ["prod", "live"],
+    },
   },
   etherscan: {
     apiKey: {
@@ -68,6 +73,7 @@ const config: HardhatUserConfig = {
       goerli: verifyKey("etherscan"),
       bsc: verifyKey("bsc"),
       bscTestnet: verifyKey("bsc"),
+      polygonMumbai: verifyKey("matic"),
     },
     customChains: [
       {
