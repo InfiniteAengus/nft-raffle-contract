@@ -27,7 +27,7 @@ const config: HardhatUserConfig = {
       forking: {
         enabled: process.env.FORKING_ENABLED === "true",
         blockNumber: Number(process.env.FORKING_BLOCK_NUM) || undefined,
-        url: node_url("mainnet"),
+        url: node_url("maticTestnet"),
       },
       accounts: accounts("localhost"),
       mining: {
