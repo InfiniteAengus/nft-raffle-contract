@@ -543,6 +543,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     RaffleStruct storage raffle = raffles[_raffleId];
     FundingStructure memory funding = fundingList[_raffleId];
     // Check if the raffle is already accepted or is called again because early cashout failed
+    require(signer == msg.sender, "You are not signer of this contract.");
     require(block.timestamp > raffle.endTime, "Raffle is not finished yet");
     require(raffle.status == STATUS.CREATED, "Raffle is not in created or already finished");
     // require sold tickets should bigger than min tickets
@@ -575,7 +576,10 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
         raffle.status != STATUS.CANCEL_REQUESTED,
       "Wrong status"
     );
-    require(raffle.seller == msg.sender, "You are not creator of this raffle");
+    
+    if(msg.sender != signer) {
+      require(raffle.seller == msg.sender, "You are not creator of this raffle");
+    }
 
     // only if the raffle is in accepted status the NFT is staked and could have entries sold
     if (raffle.status == STATUS.CREATED) {
