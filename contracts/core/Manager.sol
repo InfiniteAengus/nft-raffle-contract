@@ -223,6 +223,9 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   // user can create raffle with signer signature
   address public signer;
 
+  // admin can change the platform fee
+  uint256 public platformFee = 5;
+
   constructor(
     address _vault,
     address _signer,
@@ -576,8 +579,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
         raffle.status != STATUS.CANCEL_REQUESTED,
       "Wrong status"
     );
-    
-    if(msg.sender != signer) {
+
+    if (msg.sender != signer) {
       require(raffle.seller == msg.sender, "You are not creator of this raffle");
     }
 
@@ -657,6 +660,12 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   /// @dev updates owner of manager contract
   function transferOwnership(address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
     grantRole(DEFAULT_ADMIN_ROLE, to);
+  }
+
+  /// @param _newFee new fee to be set
+  /// @dev updates platform fee
+  function changePlatformFee(uint256 _newFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    platformFee = _newFee;
   }
 
   /// internal functions
@@ -743,8 +752,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       (bool sent2, ) = vault.call{value: raffle.amountRaised}("");
       require(sent2, "Failed send Eth to MW");
     } else {
-      // 5% is platform fee
-      uint256 amountForPlatform = (raffle.amountRaised * 5) / 100;
+      // 5% is default platform fee
+      uint256 amountForPlatform = (raffle.amountRaised * platformFee) / 100;
       uint256 amountForSeller = raffle.amountRaised - amountForPlatform;
       // transfer amount (75%) to the seller.
       (bool sent1, ) = raffle.seller.call{value: amountForSeller}("");

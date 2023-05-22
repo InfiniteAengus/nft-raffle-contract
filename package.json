@@ -17,6 +17,7 @@
     "script:localhost": "npx hardhat run --network localhost",
     "script:goerli": "npx hardhat run --network goerli",
     "script:mainnet": "npx hardhat run --network mainnet",
+    "script:maticTestnet": "npx hardhat run --network maticTestnet",
     "deploy": "yarn deploy:localhost",
     "deploy:localhost": "npx hardhat deploy --network localhost",
     "deploy:goerli": "npx hardhat deploy --network goerli",

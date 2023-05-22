@@ -32,8 +32,8 @@ export const chainlinkConfigs: Record<number, ConfigType> = {
   },
   80001: {
     linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
-    vrfCoordinate: "0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed",
-    keyHash: "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f",
-    fee: "500000000000000",
+    vrfCoordinate: "0x8C7382F9D8f56b33781fE506E897a4F1e2d17255",
+    keyHash: "0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4",
+    fee: "100000000000000",
   },
 };
