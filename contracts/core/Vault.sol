@@ -2,12 +2,16 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "hardhat/console.sol";
 
 /// @title Vault contract
 /// @notice all operator raffle funds and platform fee saves on here.
 /// referral system integrated to this contract
 /// @dev users can withdraw referral reward in this contract with backend signatures
 contract Vault is Ownable {
+  using ECDSA for bytes32;
+
   // events
   /// @dev triggers when claimed referral reward
   event ReferralRewardClaimed(address indexed to, uint256 amount);
@@ -18,14 +22,17 @@ contract Vault is Ownable {
   address public signer;
 
   // signature structure
-  struct Sig {
-    bytes32 r;
-    bytes32 s;
-    uint8 v;
-  }
+  // struct Sig {
+  //   bytes32 r;
+  //   bytes32 s;
+  //   uint8 v;
+  // }
 
   /// @param _signer signer address
-  constructor(address _signer) {}
+  constructor(address _signer) {
+    require(_signer != address(0), "INVALID_SIGNER");
+    signer = _signer;
+  }
 
   // fallback function to accept eth
   receive() external payable {}
@@ -34,12 +41,13 @@ contract Vault is Ownable {
 
   // external functions
   /// @param amount amount to claim
-  /// @param sig sigature of signer
-  function claimReferralReward(uint256 amount, Sig calldata sig) external {
-    require(_validateClaimParams(amount, sig), "Invalid signature");
+  /// @param signature sigature of signer
+  function claimReferralReward(uint256 amount, bytes calldata signature) external {
+    require(_validateClaimParams(amount, msg.sender, signature), "Invalid signature");
 
     (bool sent, ) = msg.sender.call{value: amount}("");
     require(sent, "Failed to send Ether");
+    claimedDate[msg.sender] = block.timestamp;
 
     emit ReferralRewardClaimed(msg.sender, amount);
   }
@@ -58,18 +66,26 @@ contract Vault is Ownable {
   }
 
   // internal functions
-  /// @param amount amount to claim
-  /// @param sig signature of signer
+  /// @param _amount amount to claim
+  /// @param _claimer address of claimer
+  /// @param _signature signature of signer
   /// @dev validate claim amount of user
-  function _validateClaimParams(uint256 amount, Sig calldata sig) internal view returns (bool) {
-    bytes32 messageHash = keccak256(
-      abi.encodePacked(_msgSender(), amount, claimedDate[_msgSender()])
-    );
+  function _validateClaimParams(uint256 _amount, address _claimer, bytes calldata _signature) internal view returns (bool) {
+    // bytes32 messageHash = keccak256(
+    //   abi.encodePacked(_msgSender(), amount, claimedDate[_msgSender()])
+    // );
+    bytes32 hash = keccak256(abi.encodePacked(_claimer, _amount, claimedDate[_claimer]));
+    bytes32 message = ECDSA.toEthSignedMessageHash(hash);
+    address recoveredAddress = ECDSA.recover(message, _signature);
 
-    bytes32 ethSignedMessageHash = keccak256(
-      abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
-    );
+    console.log("signer: ", signer);
 
-    return signer == ecrecover(ethSignedMessageHash, sig.v, sig.r, sig.s);
+    return (recoveredAddress == signer);
+
+    // bytes32 ethSignedMessageHash = keccak256(
+    //   abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
+    // );
+
+    // return signer == ecrecover(ethSignedMessageHash, sig.v, sig.r, sig.s);
   }
 }

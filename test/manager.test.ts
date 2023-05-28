@@ -10,6 +10,8 @@ import {
   MockNFT__factory,
   MockToken,
   MockToken__factory,
+  Vault,
+  Vault__factory,
 } from "../types";
 import { deployments } from "hardhat";
 import chai from "chai";
@@ -18,6 +20,7 @@ import { Ship } from "../utils";
 import { arrayify, parseEther, solidityKeccak256, splitSignature } from "ethers/lib/utils";
 import { constants } from "ethers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { signMessage } from "../utils/signature";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -28,11 +31,11 @@ let linkToken: MockLink;
 let vrfCoordinator: MockCoordinator;
 let nft: MockNFT;
 let token: MockToken;
+let vault: Vault;
 
 let deployer: SignerWithAddress;
 let alice: SignerWithAddress;
 let signer: SignerWithAddress;
-let vault: SignerWithAddress;
 
 enum RaffleType {
   NFT,
@@ -71,13 +74,13 @@ describe("Raffle Manager test", () => {
     deployer = scaffold.accounts.deployer;
     alice = scaffold.accounts.alice;
     signer = scaffold.accounts.signer;
-    vault = scaffold.accounts.vault;
 
     manager = await ship.connect(Manager__factory);
     linkToken = await ship.connect(MockLink__factory);
     vrfCoordinator = await ship.connect(MockCoordinator__factory);
     nft = await ship.connect(MockNFT__factory);
     token = await ship.connect(MockToken__factory);
+    vault = Vault__factory.connect((await deployments.get("Vault")).address, deployer);
 
     await manager.grantRole(await manager.OPERATOR_ROLE(), alice.address);
     await linkToken.mint(parseEther("10"));
@@ -277,4 +280,17 @@ describe("Raffle Manager test", () => {
         .withArgs(nftRaffleKey, parseEther("0.1"));
     });
   });
+
+  describe.only("Signer test: ", () => {
+    it(" Sign Message",async () => {
+      const amount = '50000';
+      const date = 0;
+
+      const signature = await signMessage(signer, ['address', 'uint256', 'uint256'], [alice.address, amount, date]);
+
+      console.log("signer address: ", signer.address);
+      console.log("vault test: ", amount, alice.address, signature);
+      await vault.connect(alice).claimReferralReward(amount, signature);
+    })
+  })
 });
