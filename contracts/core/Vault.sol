@@ -3,7 +3,6 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "hardhat/console.sol";
 
 /// @title Vault contract
 /// @notice all operator raffle funds and platform fee saves on here.
@@ -20,13 +19,6 @@ contract Vault is Ownable {
   mapping(address => uint256) public claimedDate;
   /// @dev signer address
   address public signer;
-
-  // signature structure
-  // struct Sig {
-  //   bytes32 r;
-  //   bytes32 s;
-  //   uint8 v;
-  // }
 
   /// @param _signer signer address
   constructor(address _signer) {
@@ -70,22 +62,15 @@ contract Vault is Ownable {
   /// @param _claimer address of claimer
   /// @param _signature signature of signer
   /// @dev validate claim amount of user
-  function _validateClaimParams(uint256 _amount, address _claimer, bytes calldata _signature) internal view returns (bool) {
-    // bytes32 messageHash = keccak256(
-    //   abi.encodePacked(_msgSender(), amount, claimedDate[_msgSender()])
-    // );
+  function _validateClaimParams(
+    uint256 _amount,
+    address _claimer,
+    bytes calldata _signature
+  ) internal view returns (bool) {
     bytes32 hash = keccak256(abi.encodePacked(_claimer, _amount, claimedDate[_claimer]));
     bytes32 message = ECDSA.toEthSignedMessageHash(hash);
     address recoveredAddress = ECDSA.recover(message, _signature);
 
-    console.log("signer: ", signer);
-
     return (recoveredAddress == signer);
-
-    // bytes32 ethSignedMessageHash = keccak256(
-    //   abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
-    // );
-
-    // return signer == ecrecover(ethSignedMessageHash, sig.v, sig.r, sig.s);
   }
 }

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "hardhat/console.sol";
 
@@ -34,6 +35,7 @@ import "hardhat/console.sol";
 
 contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
   using SafeERC20 for IERC20;
+  using ECDSA for bytes32;
 
   ////////// CHAINLINK VRF v1 /////////////////
   bytes32 internal keyHash; // chainlink
@@ -145,6 +147,9 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     uint256 maxTicketCount;
   }
   mapping(bytes32 => FundingStructure) public fundingList;
+
+  // Every raffle has a max amount of tickets that can be bought
+  mapping(bytes32 => uint256) public maxTicketCount;
 
   // In order to calculate the winner, in this struct is saved for each bought the data
   struct EntriesBought {
@@ -298,6 +303,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       maxTicketCount: _params.maxTicketCount
     });
 
+    maxTicketCount[key] = _params.maxTicketCount / 5;
+
     if (_params.raffleType == RAFFLETYPE.NFT) {
       // transfer the asset to the contract
       //  IERC721 _asset = IERC721(raffle.collateralAddress);
@@ -367,6 +374,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     raffles[key] = raffle;
 
     fundingList[key] = FundingStructure({minTicketCount: 0, maxTicketCount: _params.ticketSupply});
+    maxTicketCount[key] = _params.ticketSupply / 5;
 
     if (_params.raffleType == RAFFLETYPE.NFT) {
       // transfer the asset to the contract
@@ -464,8 +472,107 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     // check there are enough entries left for this particular user
     require(
       raffles[_raffleId].operatorCreated ||
-        claimsData[hash].numTicketsPerUser + ticketCount <=
-        fundingList[_raffleId].maxTicketCount / 5,
+        claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
+      "Bought too many entries()"
+    );
+    require(
+      soldTicketCount[_raffleId] + ticketCount <= fundingList[_raffleId].maxTicketCount,
+      "Max ticket amount exceed"
+    );
+
+    soldTicketCount[_raffleId] += ticketCount;
+    entriesCount[_raffleId]++;
+    // add a new element to the entriesBought array, used to calc the winner
+    EntriesBought memory entryBought = EntriesBought({
+      player: msg.sender,
+      currentEntriesLength: entriesCount[_raffleId]
+    });
+    entries[_raffleId][entriesCount[_raffleId]] = entryBought;
+
+    raffles[_raffleId].amountRaised += msg.value; // 6917 gas
+    //update claim data
+    claimsData[hash].numTicketsPerUser += ticketCount;
+    claimsData[hash].amountSpentInWeis += msg.value;
+
+    emit EntrySold(_raffleId, msg.sender, ticketCount, entriesCount[_raffleId], price); // 2377
+  }
+
+  /// @dev callable by players. Depending on the number of entries assigned to the price structure the player buys (_id parameter)
+  /// one or more entries will be assigned to the player.
+  /// Also it is checked the maximum number of entries per user is not reached
+  /// As the method is payable, in msg.value there will be the amount paid by the user
+  /// @notice If the operator set requiredNFTs when creating the raffle, only the owners of nft on that collection can make a call to this method. This will be
+  /// used for special raffles
+  /// @param _raffleId: id of the raffle
+  /// @param _entryId: id of the price structure if raffle is admin raffle, else count of entry
+  /// @param _collection: collection of the tokenId used. Not used if there is no required nft on the raffle
+  /// @param _tokenIdUsed: id of the token used in private raffles (to avoid abuse can not be reused on the same raffle)
+  /// @param _discount: discount in basis points
+  function buyDiscountEntry(
+    bytes32 _raffleId,
+    uint256 _entryId,
+    address _collection,
+    uint256 _tokenIdUsed,
+    uint256 _discount,
+    bytes calldata signature
+  ) external payable nonReentrant {
+    // check end time
+    require(raffles[_raffleId].endTime >= block.timestamp, "Raffle already finished");
+    require(
+      raffles[_raffleId].operatorCreated,
+      "Only operator created raffle can use this function"
+    );
+
+    // if the raffle requires an nft
+    if (raffles[_raffleId].collectionWhitelist.length > 0) {
+      bool hasRequiredCollection = false;
+      for (uint256 i = 0; i < raffles[_raffleId].collectionWhitelist.length; i++) {
+        if (raffles[_raffleId].collectionWhitelist[i] == _collection) {
+          hasRequiredCollection = true;
+          break;
+        }
+      }
+      require(hasRequiredCollection == true, "Not in required collection");
+      IERC721 requiredNFT = IERC721(_collection);
+      require(requiredNFT.ownerOf(_tokenIdUsed) == msg.sender, "Not the owner of tokenId");
+      bytes32 hashRequiredNFT = keccak256(abi.encode(_collection, _raffleId, _tokenIdUsed));
+      // check the tokenId has not been using yet in the raffle, to avoid abuse
+      if (requiredNFTWallets[hashRequiredNFT] == address(0)) {
+        requiredNFTWallets[hashRequiredNFT] = msg.sender;
+      } else require(requiredNFTWallets[hashRequiredNFT] == msg.sender, "tokenId used");
+    }
+
+    require(msg.sender != address(0), "msg.sender is null"); // 37
+    require(
+      raffles[_raffleId].status == STATUS.CREATED,
+      "Raffle is not in created or already finished"
+    ); // 1808
+
+    require(
+      _validateDiscountParams(
+        msg.sender,
+        _collection,
+        _discount,
+        signature
+      ),
+      "Invalid signature"
+    );
+
+    uint256 ticketCount = 0;
+    uint256 price = 0;
+    PriceStructure memory priceStruct = _getPriceStructForId(_raffleId, _entryId);
+    require(priceStruct.numTickets > 0, "id not supported");
+
+    ticketCount = priceStruct.numTickets;
+    price = (priceStruct.price * (100 - _discount)) / 100;
+
+    bytes32 hash = keccak256(abi.encode(msg.sender, _raffleId));
+    // check entry price
+    require(msg.value == price, "msg.value must be equal to the price"); // 1722
+    // check there are enough entries left for this particular user
+    require(
+      raffles[_raffleId].operatorCreated ||
+        claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
       "Bought too many entries()"
     );
     require(
@@ -664,8 +771,23 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
 
   /// @param _newFee new fee to be set
   /// @dev updates platform fee
-  function changePlatformFee(uint256 _newFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+  function setPlatformFee(uint256 _newFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
     platformFee = _newFee;
+  }
+
+  /// @param _raffleId Id of the raffle
+  /// @param _newMaxTicketCount new max ticket count to be set
+  /// @dev updates max ticket count
+  function setMaxTicketCount(
+    bytes32 _raffleId,
+    uint256 _newMaxTicketCount
+  ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    require(_newMaxTicketCount > 0, "Max ticket count must be greater than 0");
+    require(
+      _newMaxTicketCount <= fundingList[_raffleId].maxTicketCount,
+      "Max ticket count must be less than or equal to the max ticket count of the funding"
+    );
+    maxTicketCount[_raffleId] = _newMaxTicketCount;
   }
 
   /// internal functions
@@ -855,5 +977,23 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     );
 
     return signer == ecrecover(ethSignedMessageHash, sig.v, sig.r, sig.s);
+  }
+
+  /// @param _claimer address of claimer
+  /// @param _raffleAddress address of raffle
+  /// @param _discount discount
+  /// @param _signature signature of signer
+  /// @dev validate discount params
+  function _validateDiscountParams(
+    address _claimer,
+    address _raffleAddress,
+    uint256 _discount,
+    bytes calldata _signature
+  ) internal view returns (bool) {
+    bytes32 hash = keccak256(abi.encodePacked(_claimer, _raffleAddress, _discount));
+    bytes32 message = ECDSA.toEthSignedMessageHash(hash);
+    address recoveredAddress = ECDSA.recover(message, _signature);
+
+    return (recoveredAddress == signer);
   }
 }

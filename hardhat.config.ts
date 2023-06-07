@@ -95,6 +95,7 @@ const config: HardhatUserConfig = {
             enabled: true,
             runs: Number(process.env.OPTIMIZER_RUNS || 200),
           },
+          viaIR: true,
           outputSelection: {
             "*": {
               "*": ["storageLayout"],
