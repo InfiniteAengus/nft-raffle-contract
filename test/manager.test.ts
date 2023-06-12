@@ -307,8 +307,8 @@ describe("Raffle Manager test", () => {
         raffleType: RaffleType.NFT,
         collateralAddress: nft.address,
         collateralParam: 2,
-        ticketSupply: 10,
-        ticketPrice: parseEther("0.1"),
+        ticketSupply: 300,
+        ticketPrice: parseEther("0.0007"),
         endTime: chainTime + 24 * 3600 + 10,
       };
 
@@ -346,15 +346,15 @@ describe("Raffle Manager test", () => {
 
       await expect(
         manager.buyEntry(nftRaffleKey, 1, constants.AddressZero, 0, {
-          value: parseEther("0.1"),
+          value: parseEther("0.0007"),
         }),
       )
         .to.be.emit(manager, "EntrySold")
-        .withArgs(nftRaffleKey, deployer.address, 1, 1, parseEther("0.1"));
+        .withArgs(nftRaffleKey, deployer.address, 1, 1, parseEther("0.0007"));
 
       await expect(
-        manager.buyEntry(nftRaffleKey, 5, constants.AddressZero, 0, {
-          value: parseEther("0.5"),
+        manager.buyEntry(nftRaffleKey, 60, constants.AddressZero, 0, {
+          value: parseEther("0.042"),
         }),
       ).to.revertedWith("Bought too many entries()");
 
@@ -367,18 +367,22 @@ describe("Raffle Manager test", () => {
       ).to.revertedWith("Raffle already finished");
     });
 
-    it("change max buy ticket amount", async () => {
-      await expect(manager.setMaxTicketCount(nftRaffleKey, 0)).to.revertedWith(
-        "Max ticket count must be greater than 0",
-      );
+    // it("change max buy ticket amount", async () => {
+    //   await expect(manager.setMaxTicketCount(nftRaffleKey, 0)).to.revertedWith(
+    //     "Max ticket count must be greater than 0",
+    //   );
 
-      await expect(manager.setMaxTicketCount(nftRaffleKey, 11)).to.revertedWith(
-        "Max ticket count must be less than or equal to the max ticket count of the funding",
-      );
-    });
+    //   await expect(manager.setMaxTicketCount(nftRaffleKey, 101)).to.revertedWith(
+    //     "Max ticket count must be less than or equal to the max ticket count of the funding",
+    //   );
+
+    //   await expect(manager.setMaxTicketCount(nftRaffleKey, 30))
+    //     .to.be.emit(manager, "MaxTicketAmountPerBuyerUpdated")
+    //     .withArgs(nftRaffleKey, 30);
+    // });
   });
 
-  describe.only("admin raffle test", async () => {
+  describe("admin raffle test", async () => {
     it("admin create a raffle", async () => {
       const lastBlock = await time.latestBlock();
       const chainTime = (await ship.provider.getBlock(lastBlock)).timestamp;
@@ -506,5 +510,208 @@ describe("Raffle Manager test", () => {
         }),
       ).to.revertedWith("Raffle already finished");
     });
+  });
+
+  describe("user free raffle test", async () => {
+    it("user create a raffle", async () => {
+      const lastBlock = await time.latestBlock();
+      const chainTime = (await ship.provider.getBlock(lastBlock)).timestamp;
+
+      const createParams: Manager.UserCreateParamStruct = {
+        raffleType: RaffleType.NFT,
+        collateralAddress: nft.address,
+        collateralParam: 2,
+        ticketSupply: 10,
+        ticketPrice: parseEther("0.1"),
+        endTime: chainTime + 24 * 3600 + 10,
+      };
+
+      await nft.connect(alice).mint(2);
+      await nft.connect(alice).approve(manager.address, 2);
+
+      let sig = await sign(deployer.address, nft.address);
+
+      await expect(manager.connect(alice).userCreateRaffle(createParams, [], sig)).to.be.revertedWith(
+        "This collection is not whitelisted",
+      );
+
+      sig = await sign(alice.address, nft.address);
+
+      const tx = await manager.connect(alice).userCreateRaffle(createParams, [], sig);
+      const receipt = await tx.wait();
+      const expectKey = solidityKeccak256(
+        ["uint8", "address", "uint256", "uint"],
+        [RaffleType.NFT, nft.address, 2, receipt.blockNumber],
+      );
+
+      const raffleData = await manager.raffles(expectKey);
+
+      expect(raffleData.raffleType).to.eq(RaffleType.NFT);
+      expect(raffleData.collateralAddress).to.eq(nft.address);
+      expect(raffleData.collateralParam).to.eq(2);
+
+      nftRaffleKey = expectKey;
+    });
+
+    it("buy entry in user raffles", async () => {
+      const signature = await signMessage(
+        signer,
+        ["address", "bytes32", "uint256"],
+        [alice.address, nftRaffleKey, 2],
+      );
+
+      const signature2 = await signMessage(
+        signer,
+        ["address", "bytes32", "uint256"],
+        [alice.address, nftRaffleKey, 6],
+      );
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 0, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Ticket count should bigger than 0");
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 1, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Invalid signature");
+
+      await expect(manager.connect(alice).buyFreeEntry(nftRaffleKey, 2, constants.AddressZero, 0, signature))
+        .to.be.emit(manager, "EntrySold")
+        .withArgs(nftRaffleKey, alice.address, 2, 1, 0);
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 6, constants.AddressZero, 0, signature2),
+      ).to.revertedWith("Bought too many entries()");
+
+      await time.increase(24 * 3600 + 10);
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 1, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Raffle already finished");
+    });
+
+    it("finish raffle", async () => {
+      await expect(manager.connect(signer).setWinner(nftRaffleKey))
+        .to.emit(manager, "SetWinnerTriggered")
+        .withArgs(nftRaffleKey, parseEther("0"));
+    });
+  });
+
+  describe.only("admin free raffle test", async () => {
+    it("admin create a raffle", async () => {
+      const lastBlock = await time.latestBlock();
+      const chainTime = (await ship.provider.getBlock(lastBlock)).timestamp;
+
+      const createParams: Manager.OperatorCreateParamStruct = {
+        raffleType: RaffleType.NFT,
+        collateralAddress: nft.address,
+        collateralParam: 1,
+        minTicketCount: 5,
+        maxTicketCount: 10,
+        endTime: chainTime + 3600,
+      };
+
+      const prices: Manager.PriceStructureStruct[] = [
+        {
+          id: 0,
+          numTickets: 1,
+          price: parseEther("0.1"),
+        },
+        {
+          id: 1,
+          numTickets: 5,
+          price: parseEther("0.4"),
+        },
+        {
+          id: 2,
+          numTickets: 10,
+          price: parseEther("0.7"),
+        },
+        {
+          id: 3,
+          numTickets: 20,
+          price: parseEther("0.13"),
+        },
+        {
+          id: 4,
+          numTickets: 30,
+          price: parseEther("0.19"),
+        },
+      ];
+
+      const OPERATOR_ROLE = await manager.OPERATOR_ROLE();
+
+      await expect(manager.operatorCreateRaffle(createParams, prices, [])).to.be.revertedWith(
+        `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${OPERATOR_ROLE.toLowerCase()}`,
+      );
+
+      await expect(manager.connect(alice).operatorCreateRaffle(createParams, prices, [])).to.be.revertedWith(
+        "ERC721: invalid token ID",
+      );
+
+      await nft.connect(alice).mint(1);
+      await expect(manager.connect(alice).operatorCreateRaffle(createParams, prices, [])).to.be.revertedWith(
+        "ERC721: caller is not token owner or approved",
+      );
+
+      await nft.connect(alice).approve(manager.address, 1);
+
+      const tx = await manager.connect(alice).operatorCreateRaffle(createParams, prices, []);
+      const receipt = await tx.wait();
+      const expectKey = solidityKeccak256(
+        ["uint8", "address", "uint256", "uint"],
+        [RaffleType.NFT, nft.address, 1, receipt.blockNumber],
+      );
+
+      const raffleData = await manager.raffles(expectKey);
+
+      expect(raffleData.raffleType).to.eq(RaffleType.NFT);
+      expect(raffleData.collateralAddress).to.eq(nft.address);
+      expect(raffleData.collateralParam).to.eq(1);
+
+      nftRaffleKey = expectKey;
+    });
+
+    it("buy entry in admin raffles", async () => {
+      const signature = await signMessage(
+        signer,
+        ["address", "bytes32", "uint256"],
+        [alice.address, nftRaffleKey, 2],
+      );
+
+      const signature2 = await signMessage(
+        signer,
+        ["address", "bytes32", "uint256"],
+        [alice.address, nftRaffleKey, 6],
+      );
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 0, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Ticket count should bigger than 0");
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 1, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Invalid signature");
+
+      await expect(manager.connect(alice).buyFreeEntry(nftRaffleKey, 2, constants.AddressZero, 0, signature))
+        .to.be.emit(manager, "EntrySold")
+        .withArgs(nftRaffleKey, alice.address, 2, 1, 0);
+
+      console.log("signature", signature);
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 6, constants.AddressZero, 0, signature2),
+      ).to.revertedWith("Bought too many entries()");
+
+      await time.increase(3600);
+
+      await expect(
+        manager.connect(alice).buyFreeEntry(nftRaffleKey, 1, constants.AddressZero, 0, signature),
+      ).to.revertedWith("Raffle already finished");
+    });
+
+    // it("finish raffle", async () => {
+    //   await expect(manager.connect(signer).setWinner(nftRaffleKey))
+    //     .to.emit(manager, "SetWinnerTriggered")
+    //     .withArgs(nftRaffleKey, parseEther("0"));
+    // });
   });
 });

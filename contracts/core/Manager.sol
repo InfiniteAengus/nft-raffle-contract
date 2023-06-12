@@ -89,6 +89,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     uint256 indexed collateralParam,
     uint256 endTime,
     uint256 ticketSupply,
+    uint256 maxTicketAmountPerBuyer,
     address seller,
     RAFFLETYPE raffleType,
     bool operatorCreated
@@ -130,6 +131,8 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     uint256 numTickets,
     uint256 price
   );
+  // When the max ticket amount per buyer is updated
+  event MaxTicketAmountPerBuyerUpdated(bytes32 indexed raffleId, uint256 maxTicketAmountPerBuyer);
 
   /* every raffle has an array of price structure (max size = 5) with the different 
     prices for the different entries bought. The price for 1 entry is different than 
@@ -325,6 +328,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _params.collateralParam,
       _params.endTime,
       _params.maxTicketCount,
+      maxTicketCount[key],
       msg.sender,
       _params.raffleType,
       true
@@ -397,6 +401,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       _params.collateralParam,
       _params.endTime,
       _params.ticketSupply,
+      maxTicketCount[key],
       msg.sender,
       _params.raffleType,
       false
@@ -471,8 +476,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     require(msg.value == price, "msg.value must be equal to the price"); // 1722
     // check there are enough entries left for this particular user
     require(
-      raffles[_raffleId].operatorCreated ||
-        claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
+      claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
       "Bought too many entries()"
     );
     require(
@@ -549,12 +553,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     ); // 1808
 
     require(
-      _validateDiscountParams(
-        msg.sender,
-        _collection,
-        _discount,
-        signature
-      ),
+      _validateDiscountParams(msg.sender, _collection, _discount, signature),
       "Invalid signature"
     );
 
@@ -571,8 +570,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     require(msg.value == price, "msg.value must be equal to the price"); // 1722
     // check there are enough entries left for this particular user
     require(
-      raffles[_raffleId].operatorCreated ||
-        claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
+      claimsData[hash].numTicketsPerUser + ticketCount <= maxTicketCount[_raffleId],
       "Bought too many entries()"
     );
     require(
@@ -595,6 +593,86 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     claimsData[hash].amountSpentInWeis += msg.value;
 
     emit EntrySold(_raffleId, msg.sender, ticketCount, entriesCount[_raffleId], price); // 2377
+  }
+
+  /// @dev callable by players.
+  /// one or more entries will be assigned to the player.
+  /// Also it is checked the maximum number of entries per user is not reached
+  /// As the method is payable, in msg.value there will be the amount paid by the user
+  /// @notice If the operator set requiredNFTs when creating the raffle, only the owners of nft on that collection can make a call to this method. This will be
+  /// used for special raffles
+  /// @param _raffleId: id of the raffle
+  /// @param _ticketCount: id of the price structure if raffle is admin raffle, else count of entry
+  /// @param _collection: collection of the tokenId used. Not used if there is no required nft on the raffle
+  /// @param _tokenIdUsed: id of the token used in private raffles (to avoid abuse can not be reused on the same raffle)
+  /// @param signature: signature of the player
+  function buyFreeEntry(
+    bytes32 _raffleId,
+    uint256 _ticketCount,
+    address _collection,
+    uint256 _tokenIdUsed,
+    bytes calldata signature
+  ) external payable nonReentrant {
+    // check end time
+    require(raffles[_raffleId].endTime >= block.timestamp, "Raffle already finished");
+    require(_ticketCount > 0, "Ticket count should bigger than 0");
+
+    // if the raffle requires an nft
+    if (raffles[_raffleId].collectionWhitelist.length > 0) {
+      bool hasRequiredCollection = false;
+      for (uint256 i = 0; i < raffles[_raffleId].collectionWhitelist.length; i++) {
+        if (raffles[_raffleId].collectionWhitelist[i] == _collection) {
+          hasRequiredCollection = true;
+          break;
+        }
+      }
+      require(hasRequiredCollection == true, "Not in required collection");
+      IERC721 requiredNFT = IERC721(_collection);
+      require(requiredNFT.ownerOf(_tokenIdUsed) == msg.sender, "Not the owner of tokenId");
+      bytes32 hashRequiredNFT = keccak256(abi.encode(_collection, _raffleId, _tokenIdUsed));
+      // check the tokenId has not been using yet in the raffle, to avoid abuse
+      if (requiredNFTWallets[hashRequiredNFT] == address(0)) {
+        requiredNFTWallets[hashRequiredNFT] = msg.sender;
+      } else require(requiredNFTWallets[hashRequiredNFT] == msg.sender, "tokenId used");
+    }
+
+    require(msg.sender != address(0), "msg.sender is null"); // 37
+    require(
+      raffles[_raffleId].status == STATUS.CREATED,
+      "Raffle is not in created or already finished"
+    ); // 1808
+
+    require(
+      _validateFreeTicketParams(msg.sender, _raffleId, _ticketCount, signature),
+      "Invalid signature"
+    );
+
+    bytes32 hash = keccak256(abi.encode(msg.sender, _raffleId));
+    // check there are enough entries left for this particular user
+    require(
+      claimsData[hash].numTicketsPerUser + _ticketCount <= maxTicketCount[_raffleId],
+      "Bought too many entries()"
+    );
+    require(
+      soldTicketCount[_raffleId] + _ticketCount <= fundingList[_raffleId].maxTicketCount,
+      "Max ticket amount exceed"
+    );
+
+    soldTicketCount[_raffleId] += _ticketCount;
+    entriesCount[_raffleId]++;
+    // add a new element to the entriesBought array, used to calc the winner
+    EntriesBought memory entryBought = EntriesBought({
+      player: msg.sender,
+      currentEntriesLength: entriesCount[_raffleId]
+    });
+    entries[_raffleId][entriesCount[_raffleId]] = entryBought;
+
+    raffles[_raffleId].amountRaised += msg.value; // 6917 gas
+    //update claim data
+    claimsData[hash].numTicketsPerUser += _ticketCount;
+    claimsData[hash].amountSpentInWeis += msg.value;
+
+    emit EntrySold(_raffleId, msg.sender, _ticketCount, entriesCount[_raffleId], 0); // 2377
   }
 
   // // The operator can add free entries to the raffle
@@ -788,6 +866,7 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
       "Max ticket count must be less than or equal to the max ticket count of the funding"
     );
     maxTicketCount[_raffleId] = _newMaxTicketCount;
+    emit MaxTicketAmountPerBuyerUpdated(_raffleId, _newMaxTicketCount);
   }
 
   /// internal functions
@@ -991,6 +1070,24 @@ contract Manager is AccessControl, ReentrancyGuard, VRFConsumerBase {
     bytes calldata _signature
   ) internal view returns (bool) {
     bytes32 hash = keccak256(abi.encodePacked(_claimer, _raffleAddress, _discount));
+    bytes32 message = ECDSA.toEthSignedMessageHash(hash);
+    address recoveredAddress = ECDSA.recover(message, _signature);
+
+    return (recoveredAddress == signer);
+  }
+
+  /// @param _claimer address of claimer
+  /// @param _raffleId id of raffle
+  /// @param _numTickets number of tickets
+  /// @param _signature signature of signer
+  /// @dev validate free ticket params
+  function _validateFreeTicketParams(
+    address _claimer,
+    bytes32 _raffleId,
+    uint256 _numTickets,
+    bytes calldata _signature
+  ) internal view returns (bool) {
+    bytes32 hash = keccak256(abi.encodePacked(_claimer, _raffleId, _numTickets));
     bytes32 message = ECDSA.toEthSignedMessageHash(hash);
     address recoveredAddress = ECDSA.recover(message, _signature);
 
